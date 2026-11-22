@@ -155,7 +155,7 @@ addEventListener('popstate',()=>{if(view!=='home'){view='home';P={};render()}});
 
 (async()=>{
   S=await load()||{v:1,g:{},s:{},log:[]};S.g=S.g||{};S.s=S.s||{};S.log=S.log||[];
-  try{const[g,x]=await Promise.all([fetch('data/grammar.json').then(r=>r.json()),fetch('data/sentences.json').then(r=>r.json())]);G=g.grammar;T=g.tags;X=x.sentences}
+  try{const[g,x]=await Promise.all([fetch('grammar.json').then(r=>r.json()),fetch('sentences.json').then(r=>r.json())]);G=g.grammar;T=g.tags;X=x.sentences}
   catch(e){$('#app').innerHTML='<p class=pad>データを読み込めませんでした。ファイルを直接開かず、Webサーバー（GitHub Pagesなど）経由で開いてください。</p>';return}
   GM=Object.fromEntries(G.map(g=>[g.id,g]));
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
