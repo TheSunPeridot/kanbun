@@ -1,0 +1,347 @@
+{
+ "schema": 1,
+ "sentences": [
+  {
+   "id": "e01",
+   "passage_id": null,
+   "order": 0,
+   "original": "學而時習之、不亦説乎。",
+   "kundoku": "学びて時に之を習ふ、亦説ばしからずや。",
+   "translation": "学んで、折にふれてそれを復習する。なんと喜ばしいことではないか。",
+   "occ": [
+    {
+     "g": "g01",
+     "start": 6,
+     "end": 10
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e02",
+   "passage_id": null,
+   "order": 0,
+   "original": "有朋自遠方来、不亦楽乎。",
+   "kundoku": "朋有り遠方より来たる、亦楽しからずや。",
+   "translation": "友人が遠い所からやって来る。なんと楽しいことではないか。",
+   "occ": [
+    {
+     "g": "g01",
+     "start": 7,
+     "end": 11
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e03",
+   "passage_id": null,
+   "order": 0,
+   "original": "燕雀安知鴻鵠之志哉。",
+   "kundoku": "燕雀安くんぞ鴻鵠の志を知らんや。",
+   "translation": "燕や雀のような小さな鳥に、どうして鴻や鵠のような大きな鳥の志がわかろうか、いやわからない。",
+   "occ": [
+    {
+     "g": "g04",
+     "start": 2,
+     "end": 4
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e04",
+   "passage_id": null,
+   "order": 0,
+   "original": "百聞不如一見。",
+   "kundoku": "百聞は一見に如かず。",
+   "translation": "百回聞くことは、一度見ることに及ばない。",
+   "occ": [
+    {
+     "g": "g09",
+     "start": 2,
+     "end": 4
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e05",
+   "passage_id": null,
+   "order": 0,
+   "original": "國被圍於敵軍。",
+   "kundoku": "国、敵軍に囲まる。",
+   "translation": "国は敵軍に包囲される。",
+   "occ": [
+    {
+     "g": "g08",
+     "start": 1,
+     "end": 6
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e06",
+   "passage_id": null,
+   "order": 0,
+   "original": "豈不然乎。",
+   "kundoku": "豈に然らずや。",
+   "translation": "なんとそのとおりではないか。",
+   "occ": [
+    {
+     "g": "g02",
+     "start": 0,
+     "end": 4
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e07",
+   "passage_id": null,
+   "order": 0,
+   "original": "使子路問津焉。",
+   "kundoku": "子路をして津を問はしむ。",
+   "translation": "子路に渡し場をたずねさせた。",
+   "occ": [
+    {
+     "g": "g07",
+     "start": 0,
+     "end": 5
+    }
+   ],
+   "explanation": "文末の「焉」は置き字で読まない。",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e08",
+   "passage_id": null,
+   "order": 0,
+   "original": "死馬且買之、況生者乎。",
+   "kundoku": "死馬すら且つ之を買ふ、況んや生ける者をや。",
+   "translation": "死んだ馬でさえ買うのだ、ましてや生きている馬はなおさらだ。",
+   "occ": [
+    {
+     "g": "g13",
+     "start": 6,
+     "end": 10
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e09",
+   "passage_id": null,
+   "order": 0,
+   "original": "苟富貴、無相忘。",
+   "kundoku": "苟くも富貴ならば、相忘るること無かれ。",
+   "translation": "もし富貴の身になっても、互いに忘れないようにしよう。",
+   "occ": [
+    {
+     "g": "g14",
+     "start": 0,
+     "end": 1
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e10",
+   "passage_id": null,
+   "order": 0,
+   "original": "非徒無益、而又害之。",
+   "kundoku": "徒だに益無きのみに非ず、而も又之を害す。",
+   "translation": "ただ無益であるだけでなく、そのうえこれを損なう。",
+   "occ": [
+    {
+     "g": "g12",
+     "start": 0,
+     "end": 9
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e11",
+   "passage_id": null,
+   "order": 0,
+   "original": "寧為鶏口、無為牛後。",
+   "kundoku": "寧ろ鶏口と為るも、牛後と為る無かれ。",
+   "translation": "むしろ鶏の口になっても、牛の尻にはなるな。",
+   "occ": [
+    {
+     "g": "g10",
+     "start": 0,
+     "end": 9
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e12",
+   "passage_id": null,
+   "order": 0,
+   "original": "願陛下察之。",
+   "kundoku": "願はくは陛下之を察せよ。",
+   "translation": "どうか陛下よ、これをお察しください。",
+   "occ": [
+    {
+     "g": "g15",
+     "start": 0,
+     "end": 1
+    }
+   ],
+   "explanation": "",
+   "src": "出典未確認",
+   "verified": false
+  },
+  {
+   "id": "e13",
+   "passage_id": null,
+   "order": 0,
+   "original": "未嘗不読書。",
+   "kundoku": "未だ嘗て書を読まずんばあらず。",
+   "translation": "今まで本を読まなかったことはない（いつも読書していた）。",
+   "occ": [
+    {
+     "g": "g16",
+     "start": 0,
+     "end": 3
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e14",
+   "passage_id": null,
+   "order": 0,
+   "original": "未嘗敗北。",
+   "kundoku": "未だ嘗て敗北せず。",
+   "translation": "いまだ一度も負けたことがない。",
+   "occ": [
+    {
+     "g": "g17",
+     "start": 0,
+     "end": 2
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e15",
+   "passage_id": null,
+   "order": 0,
+   "original": "人不可不学。",
+   "kundoku": "人学ばざるべからず。",
+   "translation": "人は学ばなければならない。",
+   "occ": [
+    {
+     "g": "g18",
+     "start": 1,
+     "end": 4
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e16",
+   "passage_id": null,
+   "order": 0,
+   "original": "何以知之。",
+   "kundoku": "何を以て之を知るや。",
+   "translation": "どうして（何によって）それがわかるのか。",
+   "occ": [
+    {
+     "g": "g05",
+     "start": 0,
+     "end": 2
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e17",
+   "passage_id": null,
+   "order": 0,
+   "original": "何為不去。",
+   "kundoku": "何為れぞ去らざる。",
+   "translation": "どうして立ち去らないのか。",
+   "occ": [
+    {
+     "g": "g06",
+     "start": 0,
+     "end": 2
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e18",
+   "passage_id": null,
+   "order": 0,
+   "original": "豈有此理乎。",
+   "kundoku": "豈に此の理有らんや。",
+   "translation": "どうしてこのような道理があろうか、いやない。",
+   "occ": [
+    {
+     "g": "g03",
+     "start": 0,
+     "end": 5
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  },
+  {
+   "id": "e19",
+   "passage_id": null,
+   "order": 0,
+   "original": "此唯戯言耳。",
+   "kundoku": "此れ唯だ戯言のみ。",
+   "translation": "これはただの冗談にすぎない。",
+   "occ": [
+    {
+     "g": "g11",
+     "start": 1,
+     "end": 5
+    }
+   ],
+   "explanation": "",
+   "src": "作例",
+   "verified": false
+  }
+ ]
+}
