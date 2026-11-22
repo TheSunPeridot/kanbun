@@ -24,7 +24,7 @@ const pri=id=>{const p=S.g[id]||{ok:0,ng:0,streak:0,last:0};const days=p.last?Ma
 function record(gid,ok,q){const p=gp(gid);if(ok){p.ok++;p.streak++}else{p.ng++;p.streak=0}p.last=Date.now();S.log.push({t:Date.now(),g:gid,ok:ok?1:0,q});if(S.log.length>3000)S.log.splice(0,500);save()}
 
 /* ---------- 出題 ---------- */
-function pool(){let a=G.filter(g=>!CFG.tags.length||g.tags.some(t=>CFG.tags.includes(t)));
+function pool(){const via=new Set(CFG.tags.length?X.filter(x=>(x.tags||[]).some(t=>CFG.tags.includes(t))).flatMap(x=>x.occ.map(o=>o.g)):[]);let a=G.filter(g=>!CFG.tags.length||g.tags.some(t=>CFG.tags.includes(t))||via.has(g.id));
   if(CFG.mode==='weak')a=a.filter(g=>weakG(g.id));if(CFG.mode==='fav')a=a.filter(g=>S.g[g.id]?.fav);return a}
 function dis(g,key,n,sim){const near=sim?G.filter(x=>x.id!==g.id&&(g.similar.includes(x.id)||x.similar.includes(g.id))):[];
   const rest=sh(G.filter(x=>x.id!==g.id&&!near.includes(x)));const out=[];
@@ -35,8 +35,8 @@ function mk(g){
   return{t:CFG.type,gid:g.id,prompt:g.meaning,ask:d?'この意味を表す句法は？（似た形に注意）':'あてはまる句法は？',correct:g.form,choices:sh([g.form,...dis(g,'form',3,d)]),answers:[g.form,g.name],expl:g.note}}
 function build(){const a=pool();
   if(CFG.type==='k'){const ids=new Set(a.map(g=>g.id));
-    const sc=x=>Math.max(...x.occ.map(o=>ids.has(o.g)?pri(o.g):-9));
-    return X.filter(x=>x.kundoku&&x.occ.some(o=>ids.has(o.g))).map(x=>[x,sc(x)]).sort((p,q)=>q[1]-p[1]).slice(0,CFG.n).map(([x])=>({t:'k',gid:x.occ[0].g,prompt:x.original,ask:'正しい書き下し文は？',correct:x.kundoku,
+    const sc=x=>Math.max(-9,...x.occ.map(o=>ids.has(o.g)?pri(o.g):-9));
+    return X.filter(x=>x.kundoku&&(x.occ.some(o=>ids.has(o.g))||(CFG.mode==='all'&&CFG.tags.length&&(x.tags||[]).some(t=>CFG.tags.includes(t))))).map(x=>[x,sc(x)]).sort((p,q)=>q[1]-p[1]).slice(0,CFG.n).map(([x])=>({t:'k',gid:x.occ[0]?x.occ[0].g:null,prompt:x.original,ask:'正しい書き下し文は？',correct:x.kundoku,
       choices:sh([x.kundoku,...sh(X.filter(y=>y.id!==x.id&&y.kundoku&&y.kundoku!==x.kundoku)).slice(0,3).map(y=>y.kundoku)]),answers:[x.kundoku],expl:x.explanation||'',sub:x.translation}))}
   return a.map(g=>[g,pri(g.id)]).sort((p,q)=>q[1]-p[1]).slice(0,CFG.n).map(([g])=>mk(g))}
 
@@ -64,26 +64,27 @@ V.quiz=()=>{const q=Q.qs[Q.i],r=Q.res,inp=CFG.input&&q.t!=='k';
     if(inp)b+=`<div class=sm>あなたの答え：${esc(r.given||'（未入力）')}</div>`;
     b+=`<div class=ans>正解：${esc(q.correct)}</div>`+(q.sub?`<div class=tr>${esc(q.sub)}</div>`:'')+(q.expl?`<div class=note>${esc(q.expl)}</div>`:'');
     if(inp)b+=`<button class=btn data-a=flip>${r.ok?'不正解に変更する':'正解にする（言い換えで合っていた）'}</button>`;
-    b+=`<button class=btn data-a=favg data-id=${q.gid}>${S.g[q.gid]?.fav?'★ お気に入り解除':'☆ この句法をお気に入りに'}</button><button class="btn pri" data-a=next>${Q.i+1<Q.qs.length?'次へ':'結果を見る'}</button>`}
+    b+=`${q.gid?`<button class=btn data-a=favg data-id=${q.gid}>${S.g[q.gid]?.fav?'★ お気に入り解除':'☆ この句法をお気に入りに'}</button>`:''}<button class="btn pri" data-a=next>${Q.i+1<Q.qs.length?'次へ':'結果を見る'}</button>`}
   return b};
 V.result=()=>`${head('結果','setup')}<div class=score>${Q.okc} / ${Q.qs.length}</div><p class=sm style="text-align:center">${Math.round(Q.okc/Q.qs.length*100)}%</p>`+
   (Q.miss.length?`<div class=sec>間違えた問題</div>`+Q.miss.map(q=>`<div class=gb><b>${esc(q.prompt)}</b><br>正解：${esc(q.correct)}</div>`).join(''):'<p>全問正解です。</p>')+
   `<button class="btn pri" data-a=start>もう一度</button><button class=btn data-a=go data-v=home>ホームへ</button>`;
 
-const exf=(m,nf)=>X.filter(x=>(m==='fav'?S.s[x.id]?.fav:m==='ng'?S.s[x.id]?.st==='ng':true)&&(nf||!EF.tags.length||x.occ.some(o=>GM[o.g]&&GM[o.g].tags.some(t=>EF.tags.includes(t)))));
+const exf=(m,nf)=>X.filter(x=>(m==='fav'?S.s[x.id]?.fav:m==='ng'?S.s[x.id]?.st==='ng':true)&&(nf||!EF.tags.length||(x.occ.some(o=>GM[o.g]&&GM[o.g].tags.some(t=>EF.tags.includes(t)))||(x.tags||[]).some(t=>EF.tags.includes(t)))));
 V.exmenu=()=>{const c={ok:X.filter(x=>S.s[x.id]?.st==='ok').length,ng:X.filter(x=>S.s[x.id]?.st==='ng').length};
   return head('例文トレーニング')+`<p class=sm>理解できた ${c.ok} ／ まだ覚えていない ${c.ng} ／ 未学習 ${X.length-c.ok-c.ng}</p><div class=sec>分類で絞り込む（複数選択可・未選択=全分類）</div><div class=chips>${T.map(t=>`<button class="chip ${EF.tags.includes(t.id)?'on':''}" data-a=etag data-t=${t.id}>${esc(t.name)}</button>`).join('')}</div>`+
   [['all','すべて（未学習・苦手を優先）'],['ng','まだ覚えていない例文だけ'],['fav','お気に入りの例文だけ']].map(([m,l])=>`<button class=btn data-a=exstart data-m=${m}>${l}（${exf(m).length}）</button>`).join('')};
-V.ex=()=>{const x=E.xs[E.i],s=S.s[x.id]||{},R=window.SpeechRecognition||window.webkitSpeechRecognition;
-  let b=head(`例文 ${E.i+1} / ${E.xs.length}`,'exmenu')+`<div class=card><div class="kanji xl">${esc(x.original)}</div>${E.k?`<div class=kun>${esc(x.kundoku)}</div>`:''}</div>`;
-  if(!E.k)b+=`<button class=btn data-a=exk>書き下し文を見る（任意）</button>`;
-  b+=`<textarea id=tx class=inp rows=3 placeholder="現代語訳を考える（入力は任意。頭の中だけでもOK）">${esc(E.text)}</textarea><div class=two>${R?`<button class=btn data-a=mic>🎤 音声入力</button>`:`<p class=sm>キーボードのマイクで音声入力できます</p>`}<button class=btn data-a=clr>入力を消す</button></div>`;
-  if(!E.a)return b+`<button class="btn pri" data-a=exa>現代語訳・解説を見る</button>`;
-  b+=`<div class=tr>${esc(x.translation)}</div>`+x.occ.map(o=>GM[o.g]).filter(Boolean).map(g=>`<div class=gb><b>${esc(g.form)}</b>　${esc(g.meaning)}<br>書き下し：${esc(g.kundoku)}<br><span class=sm>${esc(g.note)}</span></div>`).join('')+(x.explanation?`<div class=note>${esc(x.explanation)}</div>`:'')+
-    (x.verified?'':`<p class=sm>※ この例文は確認前のデータです（要確認）。教材で照合してください。</p>`)+
-    `<div class=two><button class=btn data-a=mark data-st=ok>理解できた${s.st==='ok'?' ✓':''}</button><button class=btn data-a=mark data-st=ng>まだ覚えていない${s.st==='ng'?' ✓':''}</button></div><div class=two><button class=btn data-a=favs data-id=${x.id}>${s.fav?'★ お気に入り解除':'☆ お気に入り'}</button><button class=btn data-a=exn>次へ</button></div><div class=two><button class=btn data-a=hidex data-id=${x.id}>この例文を非表示</button><button class=btn data-a=xedit data-id=${x.id}>編集</button></div>`;
+V.ex=()=>{const x=E.xs[E.i],s=S.s[x.id]||{},R=window.SpeechRecognition||window.webkitSpeechRecognition,v=E.v,
+  kt=(x.kunten||'').trim(),kd=(x.kundoku||'').trim(),tr=(x.translation||'').trim();
+  const bt=(k,l,has)=>`<button class=btn data-a=vt data-k=${k} ${has?'':'disabled'}>${has?l+(v[k]?'を隠す':'を見る'):l+'は未登録'}</button>`;
+  let b=head(`例文 ${E.i+1} / ${E.xs.length}`,'exmenu')+`<div class=card><div class="kanji xl">${esc(x.original)}</div></div>`+
+  `<div class=three>${bt('k','訓読文',kt)}${bt('s','書き下し文',kd)}${bt('t','現代語訳',tr)}</div>`;
+  if(v.k&&kt)b+=`<div class=kt><div class=sm>訓読文</div>${esc(kt)}</div>`;
+  if(v.s&&kd)b+=`<div class=kb><div class=sm>書き下し文</div>${esc(kd)}</div>`;
+  if(v.t&&tr)b+=`<div class=tr><div class=sm>現代語訳</div>${esc(tr)}</div>`+x.occ.map(o=>GM[o.g]).filter(Boolean).map(g=>`<div class=gb><b>${esc(g.form)}</b>　${esc(g.meaning)}<br>書き下し：${esc(g.kundoku)}<br><span class=sm>${esc(g.note)}</span></div>`).join('')+(x.explanation?`<div class=note>${esc(x.explanation)}</div>`:'')+(x.verified?'':`<p class=sm>※ この例文は確認前のデータです（要確認）。教材で照合してください。</p>`);
+  b+=`<textarea id=tx class=inp rows=3 placeholder="現代語訳を考える（入力は任意。頭の中だけでもOK）">${esc(E.text)}</textarea><div class=two>${R?`<button class=btn data-a=mic>🎤 音声入力</button>`:`<p class=sm>キーボードのマイクで音声入力できます</p>`}<button class=btn data-a=clr>入力を消す</button></div>`+
+  `<div class=two><button class=btn data-a=mark data-st=ok>理解できた${s.st==='ok'?' ✓':''}</button><button class=btn data-a=mark data-st=ng>まだ覚えていない${s.st==='ng'?' ✓':''}</button></div><div class=two><button class=btn data-a=favs data-id=${x.id}>${s.fav?'★ お気に入り解除':'☆ お気に入り'}</button><button class=btn data-a=exn>次へ</button></div><div class=two><button class=btn data-a=hidex data-id=${x.id}>この例文を非表示</button><button class=btn data-a=xedit data-id=${x.id}>編集</button></div>`;
   return b};
-
 V.glist=()=>{const f=P.tag,a=G.filter(g=>!f||g.tags.includes(f));
   return head('句法一覧')+`<div class=chips><button class="chip ${f?'':'on'}" data-a=gtag data-t="">すべて</button>${T.map(t=>`<button class="chip ${f===t.id?'on':''}" data-a=gtag data-t=${t.id}>${esc(t.name)}</button>`).join('')}</div>`+
   a.map(g=>{const[s,c]=status(g.id);return`<button class=row data-a=gdet data-id=${g.id}><span class=kn>${esc(g.form)}${S.g[g.id]?.fav?' <span class=star>★</span>':''}</span><span class="badge ${c}">${s}</span><span class=sub>${esc(g.meaning)}</span></button>`}).join('')};
@@ -120,9 +121,14 @@ V.set=()=>head('設定')+`<div class=sec>バックアップ</div><p class=sm>学
   <button class=btn data-a=reset style="color:var(--ng)">学習記録をすべて削除</button>`;
 
 /* ---------- Phase 2: 追加・編集・表示切替・CSV・テーマ ---------- */
-const defS=()=>({v:2,g:{},s:{},log:[],ug:[],ux:[],ut:[],ed:{},hid:{},th:{c:'',m:'auto'}});
+const defS=()=>({v:2,g:{},s:{},log:[],ug:[],ux:[],ut:[],td:{},tn:{},ed:{},hid:{},th:{c:'',m:'auto'}});
 /* AG/AX=全データ(初期+編集上書き+自作)。G/X=表示中のものだけ。学習側は常にG/Xを使う */
-function rebuild(){AG=SG.map(g=>S.ed[g.id]||g).concat(S.ug);AX=SX.map(x=>S.ed[x.id]||x).concat(S.ux);T=ST.concat(S.ut);
+function rebuild(){
+  T=ST.filter(t=>!S.td[t.id]).map(t=>S.tn[t.id]?{...t,name:S.tn[t.id]}:t).concat(S.ut);
+  const tv=new Set(T.map(t=>t.id)),ft=a=>(a||[]).filter(t=>tv.has(t));
+  CFG.tags=CFG.tags.filter(t=>tv.has(t));EF.tags=EF.tags.filter(t=>tv.has(t));
+  AG=SG.map(g=>S.ed[g.id]||g).concat(S.ug).map(g=>({...g,tags:ft(g.tags)}));
+  AX=SX.map(x=>S.ed[x.id]||x).concat(S.ux).map(x=>({...x,tags:ft(x.tags)}));
   G=AG.filter(g=>!S.hid[g.id]);X=AX.filter(x=>!S.hid[x.id]);GM=Object.fromEntries(AG.map(g=>[g.id,g]))}
 function applyTheme(){const r=document.documentElement,t=S.th||{};
   if(t.m&&t.m!=='auto')r.dataset.t=t.m;else delete r.dataset.t;
@@ -131,8 +137,8 @@ function applyTheme(){const r=document.documentElement,t=S.th||{};
   const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t.c||'#2b4a7a'}
 function setTheme(o){Object.assign(S.th,o);applyTheme();save();render()}
 const keep=f=>{const y=scrollY;f();scrollTo(0,y)};
-const blankX=()=>({kind:'x',id:'',original:'',kundoku:'',translation:'',explanation:'',gids:[],verified:true});
-const blankG=()=>({kind:'g',id:'',name:'',form:'',meaning:'',kundoku:'',answers:'',note:'',tags:[],diff:1,newtag:'',verified:true});
+const blankX=()=>({kind:'x',id:'',original:'',kunten:'',kundoku:'',translation:'',explanation:'',gids:[],tags:[],newtag:'',_tm:false,verified:true});
+const blankG=()=>({kind:'g',id:'',name:'',form:'',meaning:'',kundoku:'',answers:'',note:'',tags:[],diff:1,newtag:'',_tm:false,verified:true});
 const fld=(l,k,v,r)=>`<div class=sec>${l}</div><textarea class=inp rows=${r} data-f=${k}>${esc(v)}</textarea>`;
 function putItem(kind,it){const L=kind==='x'?S.ux:S.ug,i=L.findIndex(x=>x.id===it.id);
   if(i>=0)L[i]=it;else if(it.id.startsWith(kind==='x'?'ux_':'ug_'))L.push(it);else S.ed[it.id]=it}
@@ -143,17 +149,21 @@ function parseCSV(t){const rows=[];let r=[],c='',q=false;t=t.replace(/^\uFEFF/,'
     else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);rows.push(r);r=[];c=''}else c+=ch}
   if(c||r.length){r.push(c);rows.push(r)}return rows.filter(r=>r.some(x=>x.trim()))}
 
+function tagId(name){let t=T.find(x=>x.name===name);if(!t){t={id:'ut_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name};S.ut.push(t);save();rebuild()}return t.id}
+const tagBox=()=>{const f=FX;return `<div class=sec>分類（複数選択可）</div><div class=chips>${T.map(t=>`<button class="chip ${f.tags.includes(t.id)?'on':''}" data-a=gt data-id=${t.id}>${esc(t.name)}</button>`).join('')||'<span class=sm>分類がありません。下から追加できます。</span>'}</div>
+  <div class=two><input class=inp data-f=newtag value="${esc(f.newtag)}" placeholder="新しい分類名"><button class=btn data-a=tadd>分類を追加</button></div>
+  <button class=btn data-a=tmgr>${f._tm?'分類の管理を閉じる':'分類の名前変更・削除'}</button>`+(f._tm?T.map(t=>`<div class=gb><b>${esc(t.name)}</b><div class=two><button class=btn data-a=tren data-id=${t.id}>名前を変更</button><button class=btn data-a=tdel data-id=${t.id} style="color:var(--ng)">削除</button></div></div>`).join(''):'')};
 V.add=()=>head('例文・句法の追加・管理')+[['xnew','例文を追加','白文・書き下し文・現代語訳・句法を入力'],['gnew','句法を追加','意味・書き下し方・分類などを入力'],['go" data-v="csv','例文をCSVで一括登録','貼り付け／ファイルから'],['go" data-v="manage','表示・非表示と編集','初期データも自作データも1件ずつ切り替え']].map(([a,t,d])=>`<button class=btn data-a="${a}"><b>${t}</b><br><span class=sm>${d}</span></button>`).join('')+`<p class=sm>写真からの登録（OCR・AI提案）は次のステップで追加します。</p>`;
 
 V.xform=()=>{const f=FX,own=f.id.startsWith('ux_');
-  return head(f.id?'例文を編集':'例文を追加','add')+fld('原文（白文）*','original',f.original,2)+fld('書き下し文','kundoku',f.kundoku,2)+fld('現代語訳','translation',f.translation,2)+fld('解説（任意）','explanation',f.explanation,3)+
+  return head(f.id?'例文を編集':'例文を追加','add')+fld('原文（白文）*','original',f.original,2)+fld('訓読文（返り点・送り仮名付き）','kunten',f.kunten,2)+`<p class=sm>書き下し文とは別の項目として保存されます。</p>`+fld('書き下し文','kundoku',f.kundoku,2)+fld('現代語訳','translation',f.translation,2)+fld('解説（任意）','explanation',f.explanation,3)+
   `<div class=sec>含まれる句法（複数選択可）</div><div class=chips>${AG.map(g=>`<button class="chip ${f.gids.includes(g.id)?'on':''}" data-a=xg data-id=${g.id}>${esc(g.form)}</button>`).join('')}</div>`+
-  `<label class=opt><input type=checkbox data-fc=verified ${f.verified?'checked':''}>教材などで確認済み</label><p class=sm>未確認のデータは「要確認」と表示されます。書き下し文が空の例文は、書き下し文クイズに出ません。</p>`+
+  tagBox()+`<p class=sm>句法に付いた分類は自動で反映されます。ここでは例文そのものの分類を設定します。</p>`+`<label class=opt><input type=checkbox data-fc=verified ${f.verified?'checked':''}>教材などで確認済み</label><p class=sm>未確認のデータは「要確認」と表示されます。書き下し文が空の例文は、書き下し文クイズに出ません。</p>`+
   `<button class="btn pri" data-a=xsave>保存する</button>`+(own?`<button class=btn data-a=xdel style="color:var(--ng)">この例文を削除</button>`:(S.ed[f.id]?`<button class=btn data-a=xrev>初期データに戻す</button>`:''))};
 V.gform=()=>{const f=FX,own=f.id.startsWith('ug_');
   return head(f.id?'句法を編集':'句法を追加','add')+`<div class=sec>句法名*</div><input class=inp data-f=name value="${esc(f.name)}" placeholder="例：不亦～乎">`+`<div class=sec>代表的な形*</div><input class=inp data-f=form value="${esc(f.form)}" placeholder="例：不亦～乎">`+
   fld('意味*','meaning',f.meaning,2)+fld('書き下し方','kundoku',f.kundoku,2)+fld('別解・許容する表現（1行に1つ）','answers',f.answers,3)+fld('注意点・解説','note',f.note,3)+
-  `<div class=sec>分類*（複数選択可）</div><div class=chips>${T.map(t=>`<button class="chip ${f.tags.includes(t.id)?'on':''}" data-a=gt data-id=${t.id}>${esc(t.name)}</button>`).join('')}</div><input class=inp data-f=newtag value="${esc(f.newtag)}" placeholder="新しい分類を作る（任意）">`+
+  tagBox()+
   `<div class=sec>難易度</div><select class=inp data-f=diff>${[1,2,3].map(n=>`<option ${+f.diff===n?'selected':''}>${n}</option>`).join('')}</select>`+
   `<label class=opt><input type=checkbox data-fc=verified ${f.verified?'checked':''}>教材などで確認済み</label>`+`<button class="btn pri" data-a=gsave>保存する</button>`+(own?`<button class=btn data-a=gdel style="color:var(--ng)">この句法を削除</button>`:(S.ed[f.id]?`<button class=btn data-a=grev>初期データに戻す</button>`:''))};
 
@@ -161,22 +171,23 @@ V.manage=()=>{const k=P.k||'g',L=k==='g'?AG:AX;
   return head('表示・非表示と編集','add')+`<div class=chips><button class="chip ${k==='g'?'on':''}" data-a=mtab data-k=g>句法 ${AG.length}</button><button class="chip ${k==='x'?'on':''}" data-a=mtab data-k=x>例文 ${AX.length}</button></div><p class=sm>非表示にした項目は、クイズ・例文トレーニング・一覧に出ません。学習記録は残ります。</p><button class=btn data-a=showall data-k=${k}>すべて表示にする</button>`+
   L.map(it=>{const h=S.hid[it.id],own=/^u[gx]_/.test(it.id);return`<div class="gb ${h?'dim':''}"><b>${esc(k==='g'?it.form:it.original)}</b><br><span class=sm>${esc(k==='g'?it.meaning:it.translation)}</span><div class=chips><span class=badge>${own?'自作':'初期'}</span>${it.verified?'':'<span class="badge unv">要確認</span>'}${h?'<span class="badge ng">非表示</span>':''}</div><div class=two><button class=btn data-a=hide data-id=${it.id}>${h?'表示する':'非表示にする'}</button><button class=btn data-a=${k==='g'?'gedit':'xedit'} data-id=${it.id}>編集</button></div></div>`}).join('')};
 
-V.csv=()=>head('例文をCSVで一括登録','add')+`<p class=sm>列の順番：白文, 書き下し文, 現代語訳, 句法, 解説。句法は名前かIDで、複数なら | で区切ります。1行目が「白文」なら見出しとして読み飛ばします。文字コードはUTF-8にしてください。</p>
+V.csv=()=>head('例文をCSVで一括登録','add')+`<p class=sm>列の順番：白文, 書き下し文, 現代語訳, 句法, 解説, 訓読文（解説・訓読文は省略可）。句法は名前かIDで、複数なら | で区切ります。1行目が「白文」なら見出しとして読み飛ばします。文字コードはUTF-8にしてください。</p>
   <button class=btn data-a=csvtpl>ひな形を保存</button><label class=btn style="text-align:center">CSVファイルを選ぶ<input id=csvf type=file accept=".csv,.txt,text/csv" hidden></label>
   <textarea class=inp rows=6 data-f=csvtext placeholder="ここに貼り付け（スプレッドシートからも可）">${esc(CS.text)}</textarea><button class="btn pri" data-a=csvplan>内容を確認する</button>`+
   (CS.plan?`<div class=card><b>${CS.plan.add.length}件を登録できます</b><div class=sm>重複でスキップ ${CS.plan.dup}件</div></div>`+(CS.plan.warn.length?`<div class=note>${CS.plan.warn.slice(0,10).map(esc).join('<br>')}${CS.plan.warn.length>10?`<br>ほか${CS.plan.warn.length-10}件`:''}</div>`:'')+(CS.plan.add.length?`<p class=sm>登録した例文は「要確認」になります。確認後に編集画面で「確認済み」にしてください。</p><button class="btn pri" data-a=csvgo>${CS.plan.add.length}件を登録する</button>`:''):'');
 
 const A2={
   xnew(){FX=blankX();go('xform')},gnew(){FX=blankG();go('gform')},
-  xedit(d){const x=AX.find(x=>x.id===d.id);FX={kind:'x',id:x.id,original:x.original,kundoku:x.kundoku||'',translation:x.translation||'',explanation:x.explanation||'',gids:x.occ.map(o=>o.g),verified:!!x.verified};go('xform')},
-  gedit(d){const g=AG.find(g=>g.id===d.id);FX={kind:'g',id:g.id,name:g.name,form:g.form,meaning:g.meaning,kundoku:g.kundoku||'',answers:(g.answers||[]).join('\n'),note:g.note||'',tags:[...g.tags],diff:g.diff||1,newtag:'',verified:!!g.verified};go('gform')},
+  xedit(d){const x=AX.find(x=>x.id===d.id);FX={kind:'x',id:x.id,original:x.original,kundoku:x.kundoku||'',translation:x.translation||'',explanation:x.explanation||'',gids:x.occ.map(o=>o.g),kunten:x.kunten||'',tags:[...(x.tags||[])],newtag:'',_tm:false,verified:!!x.verified};go('xform')},
+  gedit(d){const g=AG.find(g=>g.id===d.id);FX={kind:'g',id:g.id,name:g.name,form:g.form,meaning:g.meaning,kundoku:g.kundoku||'',answers:(g.answers||[]).join('\n'),note:g.note||'',tags:[...g.tags],diff:g.diff||1,newtag:'',_tm:false,verified:!!g.verified};go('gform')},
   xg(d){keep(()=>{FX.gids=FX.gids.includes(d.id)?FX.gids.filter(x=>x!==d.id):[...FX.gids,d.id];render()})},
   gt(d){keep(()=>{FX.tags=FX.tags.includes(d.id)?FX.tags.filter(x=>x!==d.id):[...FX.tags,d.id];render()})},
   xsave(){const f=FX,o=f.original.trim();if(!o)return toast('原文（白文）を入力してください');
     if(!f.id&&AX.some(x=>x.original===o)&&!confirm('同じ原文がすでにあります。追加しますか？'))return;
     const old=f.id&&AX.find(x=>x.id===f.id);
+    const tags=[...f.tags],nt=f.newtag.trim();if(nt){const id=tagId(nt);if(!tags.includes(id))tags.push(id)}
     putItem('x',{id:f.id||'ux_'+Date.now().toString(36),passage_id:old?old.passage_id:null,order:old?old.order:0,original:o,kundoku:f.kundoku.trim(),translation:f.translation.trim(),
-      occ:f.gids.map(g=>(old&&old.occ.find(c=>c.g===g))||{g,start:null,end:null}),explanation:f.explanation.trim(),src:old?old.src:'ユーザー登録',verified:f.verified});
+      occ:f.gids.map(g=>(old&&old.occ.find(c=>c.g===g))||{g,start:null,end:null}),explanation:f.explanation.trim(),kunten:f.kunten.trim(),tags,src:old?old.src:'ユーザー登録',verified:f.verified});
     save();rebuild();toast('保存しました');go('manage',{k:'x'})},
   gsave(){const f=FX;if(!f.name.trim()||!f.form.trim()||!f.meaning.trim())return toast('句法名・代表的な形・意味は必須です');
     const tags=[...f.tags],nt=f.newtag.trim();
@@ -192,15 +203,22 @@ const A2={
   mtab(d){P.k=d.k;render()},
   hide(d){keep(()=>{S.hid[d.id]?delete S.hid[d.id]:S.hid[d.id]=1;save();rebuild();view==='gdet'?go('glist'):render()})},
   showall(d){S.hid={};save();rebuild();toast('すべて表示にしました');render()},
-  hidex(d){S.hid[d.id]=1;save();rebuild();E.xs=E.xs.filter(x=>x.id!==d.id);if(E.i>=E.xs.length){toast('対象の例文がなくなりました');go('exmenu')}else{E.k=E.a=false;E.text='';render();scrollTo(0,0)}},
+  hidex(d){S.hid[d.id]=1;save();rebuild();E.xs=E.xs.filter(x=>x.id!==d.id);if(E.i>=E.xs.length){toast('対象の例文がなくなりました');go('exmenu')}else{E.v={k:false,s:false,t:false};E.text='';render();scrollTo(0,0)}},
   etag(d){keep(()=>{EF.tags=EF.tags.includes(d.t)?EF.tags.filter(x=>x!==d.t):[...EF.tags,d.t];render()})},
   thc(d){setTheme({c:d.c})},thm(d){setTheme({m:d.m})},thr(){setTheme({c:'',m:'auto'})},
-  csvtpl(){const b=new Blob(['\uFEFF白文,書き下し文,現代語訳,句法,解説\n"國被圍於敵軍。","国、敵軍に囲まる。","国は敵軍に包囲される。","被～於A","（例）"\n'],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kanbun-template.csv';a.click()},
+  tadd(){const n=FX.newtag.trim();if(!n)return toast('分類名を入力してください');const id=tagId(n);if(!FX.tags.includes(id))FX.tags.push(id);FX.newtag='';keep(render)},
+  tmgr(){FX._tm=!FX._tm;keep(render)},
+  tren(d){const t=T.find(x=>x.id===d.id),n=prompt('新しい分類名',t.name);if(n==null)return;const nn=n.trim();if(!nn)return toast('分類名を入力してください');
+    if(T.some(x=>x.id!==t.id&&x.name===nn))return toast('同じ名前の分類がすでにあります');
+    const u=S.ut.find(x=>x.id===t.id);u?u.name=nn:S.tn[t.id]=nn;save();rebuild();keep(render)},
+  tdel(d){const t=T.find(x=>x.id===d.id);if(!confirm(`分類「${t.name}」を削除します。この分類が付いた句法・例文からは外れますが、句法・例文そのものは消えません。`))return;
+    S.ut.some(x=>x.id===d.id)?S.ut=S.ut.filter(x=>x.id!==d.id):S.td[d.id]=1;FX.tags=FX.tags.filter(x=>x!==d.id);save();rebuild();keep(render)},
+  csvtpl(){const b=new Blob(['\uFEFF白文,書き下し文,現代語訳,句法,解説,訓読文\n"國被圍於敵軍。","国、敵軍に囲まる。","国は敵軍に包囲される。","被～於A","（例）",""\n'],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kanbun-template.csv';a.click()},
   csvplan(){const rows=parseCSV(CS.text);if(rows.length&&rows[0][0].trim()==='白文')rows.shift();
     const add=[],warn=[],seen=new Set(AX.map(x=>x.original));let dup=0;
     rows.forEach((r,i)=>{const o=(r[0]||'').trim();if(!o){warn.push(`${i+1}行目：白文が空のためスキップ`);return}if(seen.has(o)){dup++;return}seen.add(o);
       const gids=[];(r[3]||'').split(/[|｜;；]/).map(s=>s.trim()).filter(Boolean).forEach(n=>{const g=AG.find(g=>g.id===n||g.name===n||g.form===n);g?gids.push(g.id):warn.push(`${i+1}行目：句法「${n}」は未登録のため紐付けません`)});
-      add.push({id:'ux_'+Date.now().toString(36)+i,passage_id:null,order:0,original:o,kundoku:(r[1]||'').trim(),translation:(r[2]||'').trim(),occ:gids.map(g=>({g,start:null,end:null})),explanation:(r[4]||'').trim(),src:'CSV登録',verified:false})});
+      add.push({id:'ux_'+Date.now().toString(36)+i,passage_id:null,order:0,original:o,kundoku:(r[1]||'').trim(),translation:(r[2]||'').trim(),occ:gids.map(g=>({g,start:null,end:null})),explanation:(r[4]||'').trim(),kunten:(r[5]||'').trim(),tags:[],src:'CSV登録',verified:false})});
     CS.plan={add,warn,dup};render()},
   csvgo(){const n=CS.plan.add.length;S.ux.push(...CS.plan.add);CS.plan=null;CS.text='';save();rebuild();toast(n+'件を登録しました');go('add')}
 };
@@ -212,15 +230,15 @@ const A={
   pick(d){const q=Q.qs[Q.i],c=q.choices[+d.i];Q.res={ok:c===q.correct,given:c};render()},
   submit(){const q=Q.qs[Q.i],v=$('#inp').value,y=norm(v);Q.res={ok:!!y&&q.answers.some(a=>{const x=norm(a);return x===y||(x.length>=4&&y.includes(x))}),given:v};render()},
   flip(){Q.res.ok=!Q.res.ok;render()},
-  next(){const q=Q.qs[Q.i];record(q.gid,Q.res.ok,q.t);Q.res.ok?Q.okc++:Q.miss.push(q);Q.i++;Q.res=null;Q.i>=Q.qs.length?go('result'):render()},
+  next(){const q=Q.qs[Q.i];if(q.gid)record(q.gid,Q.res.ok,q.t);Q.res.ok?Q.okc++:Q.miss.push(q);Q.i++;Q.res=null;Q.i>=Q.qs.length?go('result'):render()},
   favg(d){const p=gp(d.id);p.fav=!p.fav;save();render()},
   favs(d){const p=sp(d.id);p.fav=!p.fav;save();render()},
   weakquiz(){CFG.mode='weak';CFG.tags=[];A.start()},favquiz(){CFG.mode='fav';CFG.tags=[];A.start()},
   exstart(d){const xs=exf(d.m,d.nf);if(!xs.length)return toast('対象の例文がありません');
-    const w=x=>{const s=S.s[x.id]||{};return(s.st==='ok'?2:s.st==='ng'?0:1)+Math.random()*1.2};xs.sort((a,b)=>w(a)-w(b));E={xs,i:0,k:false,a:false,text:''};go('ex')},
-  exk(){E.k=true;render()},exa(){E.a=true;render()},clr(){E.text='';render()},
+    const w=x=>{const s=S.s[x.id]||{};return(s.st==='ok'?2:s.st==='ng'?0:1)+Math.random()*1.2};xs.sort((a,b)=>w(a)-w(b));E={xs,i:0,v:{k:false,s:false,t:false},text:''};go('ex')},
+  vt(d){keep(()=>{E.v[d.k]=!E.v[d.k];render()})},clr(){E.text='';render()},
   mark(d){const x=E.xs[E.i],s=sp(x.id);s.st=d.st;s.last=Date.now();save();A.exn()},
-  exn(){E.i++;if(E.i>=E.xs.length){toast('一巡しました');go('exmenu')}else{E.k=E.a=false;E.text='';render();scrollTo(0,0)}},
+  exn(){E.i++;if(E.i>=E.xs.length){toast('一巡しました');go('exmenu')}else{E.v={k:false,s:false,t:false};E.text='';render();scrollTo(0,0)}},
   mic(){const R=window.SpeechRecognition||window.webkitSpeechRecognition,r=new R();r.lang='ja-JP';r.onresult=e=>{E.text=(E.text?E.text+'\n':'')+e.results[0][0].transcript;render()};
     r.onerror=()=>toast('音声認識を使えません。キーボードのマイクをお使いください');try{r.start();toast('話してください')}catch(e){toast('音声認識を開始できません')}},
   gtag(d){P.tag=d.t;render()},gdet(d){go('gdet',{id:d.id})},
